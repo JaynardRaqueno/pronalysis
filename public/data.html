@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <meta name="description" content="" />
+    <meta name="author" content="" />
+    <title>Pronalysis</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+    <link rel="icon" type="image/x-icon" href="assets/favicon.ico" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css" rel="stylesheet" />
+    <link href="css/styles.css" rel="stylesheet" />
+    <link href="css/data.css" rel="stylesheet" />
+</head>
+
+<body class="d-flex flex-column h-100">
+    <main class="flex-shrink-0">
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+            <div class="container px-5">
+                <a class="navbar-brand" href="home.html">Pronalysis</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
+                <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                    <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                        <li class="nav-item"><a class="nav-link" href="home.html">Home</a></li>
+                        <li class="nav-item"><a class="nav-link" href="about.html">About</a></li>
+                        <li class="nav-item"><a class="nav-link" href="Analysis.html">Analysis</a></li>
+                        <li class="nav-item"><a class="nav-link" href="data.html">data</a></li>
+                        <li class="nav-item"><a class="nav-link" href="php/logout.php">Log Out</a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+        <button onclick="fetchDataAndPopulateTable()">Refresh Data</button>
+        <button onclick="downloadCSV()">Download as CSV</button>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Phrase</th>
+                    <th>Classification</th>
+                    <th>Created At</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                <!-- Data will be populated here -->
+            </tbody>
+        </table>
+    </main>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+
+    <script>
+        function fetchDataAndPopulateTable() {
+    fetch('http://127.0.0.1/pronalysis/public/phrases')
+        .then(response => response.json())
+        .then(responseData => {
+            const tableBody = document.getElementById('tableBody');
+            tableBody.innerHTML = ''; // Clear previous data
+
+            // Check if responseData.data is an array
+            if (Array.isArray(responseData.data)) {
+                responseData.data.forEach(item => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${item.id}</td>
+                        <td>${item.phrase}</td>
+                        <td>${item.classification}</td>
+                        <td>${item.created_at}</td>
+                        <td><button onclick="deleteItem(${item.id})">Delete</button></td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            } else {
+                // If responseData.data is not an array, log it or handle it as needed
+                console.error('Expected responseData.data to be an array, but received:', responseData.data);
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching data:', error);
+        });
+}
+
+function downloadCSV() {
+    const table = document.querySelector('table');
+    let csv = [];
+    const rows = table.querySelectorAll('tr');
+    rows.forEach((row, rowIndex) => {
+        let rowData = [];
+        const cols = row.querySelectorAll('td, th');
+        cols.forEach((col, colIndex) => {
+            if (colIndex !== cols.length - 1) { // Skip the last column (Action column)
+                rowData.push(`"${col.innerText}"`);
+            }
+        });
+        csv.push(rowData.join(','));
+    });
+
+    const csvContent = csv.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'data.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+
+    </script>
+</body>
+
+</html>
